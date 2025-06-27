@@ -33,12 +33,25 @@ echo "Updating system..."
 # INSTALL PACKAGES
 # -------------------------------
 echo "Installing Apache, PHP, Redis, Varnish..."
-#apt install -y mariadb-server
-#apt install -y apt-transport-https ca-certificates gnupg
-#apt install -y apache2 php8.2 php8.2-fpm php8.2-cli php8.2-mysql \
-#  php8.2-xml php8.2-curl php8.2-gd php8.2-bcmath php8.2-intl \
-#  php8.2-soap php8.2-zip php8.2-mbstring php8.2-common php8.2-opcache \
-#  php8.2-readline unzip curl git redis-server varnish
+# Remove any existing MariaDB installation
+apt remove -y mariadb-server mariadb-client
+apt autoremove -y
+
+# Add MariaDB 10.6 repository
+apt install -y apt-transport-https ca-certificates gnupg
+curl -LsS https://r.mariadb.com/downloads/mariadb_repo_setup | bash -s -- --mariadb-server-version="mariadb-10.6"
+
+# Install MariaDB 10.6
+apt update
+apt install -y mariadb-server-10.6 mariadb-client-10.6
+
+# Ensure MariaDB is started and enabled
+systemctl start mariadb
+systemctl enable mariadb
+apt install -y apache2 php8.2 php8.2-fpm php8.2-cli php8.2-mysql \
+  php8.2-xml php8.2-curl php8.2-gd php8.2-bcmath php8.2-intl \
+  php8.2-soap php8.2-zip php8.2-mbstring php8.2-common php8.2-opcache \
+  php8.2-readline unzip curl git redis-server varnish
 
 # -------------------------------
 # INSTALL COMPOSER
@@ -66,15 +79,15 @@ echo "Installing Composer..."
 # CONFIGURE MYSQL
 # -------------------------------
 echo "Configuring MariaDB..."
-#mysql -u root <<MYSQL_SCRIPT
-#SET PASSWORD FOR 'root'@'localhost' = PASSWORD('${MYSQL_ROOT_PASS}');
-#FLUSH PRIVILEGES;
-#CREATE DATABASE ${MYSQL_MAGENTO_DB};
-#ALTER DATABASE ${MYSQL_MAGENTO_DB} CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-#CREATE USER '${MYSQL_MAGENTO_USER}'@'localhost' IDENTIFIED BY '${MYSQL_MAGENTO_PASS}';
-#GRANT ALL PRIVILEGES ON ${MYSQL_MAGENTO_DB}.* TO '${MYSQL_MAGENTO_USER}'@'localhost';
-#FLUSH PRIVILEGES;
-#MYSQL_SCRIPT
+mysql -u root <<MYSQL_SCRIPT
+SET PASSWORD FOR 'root'@'localhost' = PASSWORD('${MYSQL_ROOT_PASS}');
+FLUSH PRIVILEGES;
+CREATE DATABASE ${MYSQL_MAGENTO_DB};
+ALTER DATABASE ${MYSQL_MAGENTO_DB} CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE USER '${MYSQL_MAGENTO_USER}'@'localhost' IDENTIFIED BY '${MYSQL_MAGENTO_PASS}';
+GRANT ALL PRIVILEGES ON ${MYSQL_MAGENTO_DB}.* TO '${MYSQL_MAGENTO_USER}'@'localhost';
+FLUSH PRIVILEGES;
+MYSQL_SCRIPT
 
 # -------------------------------
 # CONFIGURE PHP
@@ -90,9 +103,9 @@ systemctl restart php8.2-fpm
 # -------------------------------
 # DOWNLOAD MAGENTO
 # -------------------------------
-echo "Downloading Magento ${MAGENTO_VERSION}..."
-mkdir -p ${MAGENTO_BASE_DIR}
-cd ${MAGENTO_BASE_DIR}
+#echo "Downloading Magento ${MAGENTO_VERSION}..."
+#mkdir -p ${MAGENTO_BASE_DIR}
+#cd ${MAGENTO_BASE_DIR}
 
 
 # -------------------------------
