@@ -191,12 +191,12 @@ bin/magento setup:install \
   --cache-backend=redis \
   --cache-backend-redis-server=127.0.0.1 \
   --cache-backend-redis-port=6379 \
-  --page-cache=varnish \
-  --page-cache-varnish-hosts=127.0.0.1:80
+  --page-cache=varnish
 
 bin/magento deploy:mode:set production
 bin/magento setup:upgrade
 bin/magento cache:flush
+bin/magento setup:config:set --http-cache-hosts=127.0.0.1:80
 
 echo "Magento ${MAGENTO_VERSION} with Apache + Redis + Varnish + Elasticsearch7 installed!"
 echo "Open your site: http://${DOMAIN_NAME}"
