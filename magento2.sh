@@ -33,6 +33,7 @@ apt update && apt upgrade -y
 # INSTALL PACKAGES
 # -------------------------------
 echo "Installing Apache, PHP, Redis, Varnish..."
+apt install -y mariadb-server
 apt install -y apt-transport-https ca-certificates gnupg
 apt install -y apache2 php8.2 php8.2-fpm php8.2-cli php8.2-mysql \
   php8.2-xml php8.2-curl php8.2-gd php8.2-bcmath php8.2-intl \
