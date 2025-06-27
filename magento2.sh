@@ -43,7 +43,7 @@ curl -LsS https://r.mariadb.com/downloads/mariadb_repo_setup | bash -s -- --mari
 
 # Install MariaDB 10.6
 apt update
-apt install -y mariadb-server-10.6 mariadb-client-10.6
+apt install -y mariadb-server-10.6.22 mariadb-client-10.6.22
 
 # Ensure MariaDB is started and enabled
 systemctl start mariadb
