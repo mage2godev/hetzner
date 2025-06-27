@@ -14,6 +14,88 @@ MAGENTO_BASE_DIR="/var/www/magento2"
 DOMAIN_NAME="irelax.com.ua"
 
 # -------------------------------
+# SWAP (для VPS < 4GB)
+# -------------------------------
+echo "Creating swap file..."
+#fallocate -l 2G /swapfile
+#chmod 600 /swapfile
+#mkswap /swapfile
+#swapon /swapfile
+#echo '/swapfile none swap sw 0 0' >> /etc/fstab
+
+# -------------------------------
+# UPDATE SYSTEM
+# -------------------------------
+echo "Updating system..."
+#apt update && apt upgrade -y
+
+# -------------------------------
+# INSTALL PACKAGES
+# -------------------------------
+echo "Installing Apache, PHP, Redis, Varnish..."
+#apt install -y mariadb-server
+#apt install -y apt-transport-https ca-certificates gnupg
+#apt install -y apache2 php8.2 php8.2-fpm php8.2-cli php8.2-mysql \
+#  php8.2-xml php8.2-curl php8.2-gd php8.2-bcmath php8.2-intl \
+#  php8.2-soap php8.2-zip php8.2-mbstring php8.2-common php8.2-opcache \
+#  php8.2-readline unzip curl git redis-server varnish
+
+# -------------------------------
+# INSTALL COMPOSER
+# -------------------------------
+echo "Installing Composer..."
+#curl -sS https://getcomposer.org/installer | php
+#mv composer.phar /usr/local/bin/composer
+
+# -------------------------------
+# INSTALL Elasticsearch 7.x
+# -------------------------------
+#echo "Installing Elasticsearch 7.x..."
+#
+#wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor | tee /usr/share/keyrings/elasticsearch-keyring.gpg >/dev/null
+#
+#echo "deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.gpg] https://artifacts.elastic.co/packages/7.x/apt stable main" | tee /etc/apt/sources.list.d/elastic-7.x.list
+#
+#apt update && apt install -y elasticsearch
+#
+#systemctl daemon-reload
+#systemctl enable elasticsearch
+#systemctl start elasticsearch
+
+# -------------------------------
+# CONFIGURE MYSQL
+# -------------------------------
+echo "Configuring MariaDB..."
+#mysql -u root <<MYSQL_SCRIPT
+#SET PASSWORD FOR 'root'@'localhost' = PASSWORD('${MYSQL_ROOT_PASS}');
+#FLUSH PRIVILEGES;
+#CREATE DATABASE ${MYSQL_MAGENTO_DB};
+#ALTER DATABASE ${MYSQL_MAGENTO_DB} CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+#CREATE USER '${MYSQL_MAGENTO_USER}'@'localhost' IDENTIFIED BY '${MYSQL_MAGENTO_PASS}';
+#GRANT ALL PRIVILEGES ON ${MYSQL_MAGENTO_DB}.* TO '${MYSQL_MAGENTO_USER}'@'localhost';
+#FLUSH PRIVILEGES;
+#MYSQL_SCRIPT
+
+# -------------------------------
+# CONFIGURE PHP
+# -------------------------------
+echo "Configuring PHP..."
+#sed -i 's/memory_limit = .*/memory_limit = 2G/' /etc/php/8.2/fpm/php.ini
+#sed -i 's/upload_max_filesize = .*/upload_max_filesize = 64M/' /etc/php/8.2/fpm/php.ini
+#sed -i 's/post_max_size = .*/post_max_size = 64M/' /etc/php/8.2/fpm/php.ini
+#sed -i 's/;date.timezone =.*/date.timezone = UTC/' /etc/php/8.2/fpm/php.ini
+
+systemctl restart php8.2-fpm
+
+# -------------------------------
+# DOWNLOAD MAGENTO
+# -------------------------------
+echo "Downloading Magento ${MAGENTO_VERSION}..."
+mkdir -p ${MAGENTO_BASE_DIR}
+cd ${MAGENTO_BASE_DIR}
+
+
+# -------------------------------
 # SET PERMISSIONS
 # -------------------------------
 echo "Setting permissions..."
