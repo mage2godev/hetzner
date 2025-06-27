@@ -17,8 +17,6 @@ DOMAIN_NAME="irelax.com.ua"
 # SWAP (для VPS < 4GB)
 # -------------------------------
 echo "Creating swap file..."
-swapoff /swapfile
-rm /swapfile
 fallocate -l 2G /swapfile
 chmod 600 /swapfile
 mkswap /swapfile
@@ -32,17 +30,10 @@ echo "Updating system..."
 apt update && apt upgrade -y
 
 # -------------------------------
-# ADD PHP REPOSITORY
-# -------------------------------
-echo "Adding PHP 8.2 repository..."
-apt install -y software-properties-common
-add-apt-repository -y ppa:ondrej/php
-apt update
-
-# -------------------------------
 # INSTALL PACKAGES
 # -------------------------------
 echo "Installing Apache, PHP, Redis, Varnish..."
+apt install -y apt-transport-https ca-certificates gnupg
 apt install -y apache2 php8.2 php8.2-fpm php8.2-cli php8.2-mysql \
   php8.2-xml php8.2-curl php8.2-gd php8.2-bcmath php8.2-intl \
   php8.2-soap php8.2-zip php8.2-mbstring php8.2-common php8.2-opcache \
@@ -56,21 +47,19 @@ curl -sS https://getcomposer.org/installer | php
 mv composer.phar /usr/local/bin/composer
 
 # -------------------------------
-# INSTALL OpenSearch
+# INSTALL Elasticsearch 7.x
 # -------------------------------
-echo "Installing OpenSearch..."
-wget -qO - https://artifacts.opensearch.org/publickeys/opensearch.pgp | gpg --dearmor | tee /usr/share/keyrings/opensearch.gpg > /dev/null
-echo "deb [signed-by=/usr/share/keyrings/opensearch.gpg] https://artifacts.opensearch.org/releases/bundle/opensearch/2.x/apt stable main" | tee /etc/apt/sources.list.d/opensearch-2.x.list
+echo "Installing Elasticsearch 7.x..."
 
-# Disable demo configuration installation to prevent post-installation script errors
-export OPENSEARCH_INITIAL_ADMIN_PASSWORD=admin
-export DISABLE_INSTALL_DEMO_CONFIG=true
-export DISABLE_SECURITY_PLUGIN=true
+wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor | tee /usr/share/keyrings/elasticsearch-keyring.gpg >/dev/null
 
-apt update && apt install -y opensearch
+echo "deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.gpg] https://artifacts.elastic.co/packages/7.x/apt stable main" | tee /etc/apt/sources.list.d/elastic-7.x.list
 
-systemctl enable opensearch
-systemctl start opensearch
+apt update && apt install -y elasticsearch
+
+systemctl daemon-reload
+systemctl enable elasticsearch
+systemctl start elasticsearch
 
 # -------------------------------
 # CONFIGURE MYSQL
@@ -196,9 +185,9 @@ bin/magento setup:install \
   --currency=USD \
   --timezone=UTC \
   --use-rewrites=1 \
-  --search-engine=opensearch \
-  --opensearch-host=localhost \
-  --opensearch-port=9200 \
+  --search-engine=elasticsearch7 \
+  --elasticsearch-host=localhost \
+  --elasticsearch-port=9200 \
   --session-save=redis \
   --cache-backend=redis \
   --cache-backend-redis-server=127.0.0.1 \
@@ -210,5 +199,5 @@ bin/magento deploy:mode:set production
 bin/magento setup:upgrade
 bin/magento cache:flush
 
-echo "Magento ${MAGENTO_VERSION} with Apache + Redis + Varnish + OpenSearch installed!"
+echo "Magento ${MAGENTO_VERSION} with Apache + Redis + Varnish + Elasticsearch7 installed!"
 echo "Open your site: http://${DOMAIN_NAME}"
