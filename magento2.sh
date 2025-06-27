@@ -9,7 +9,7 @@ MYSQL_ROOT_PASS="RootPass123!"
 MYSQL_MAGENTO_DB="magento"
 MYSQL_MAGENTO_USER="magento_user"
 MYSQL_MAGENTO_PASS="Magent0UserPass!"
-MAGENTO_VERSION="2.4.7"
+MAGENTO_VERSION="2.4.6-p9"
 MAGENTO_BASE_DIR="/var/www/magento2"
 DOMAIN_NAME="irelax.com.ua"
 
@@ -39,10 +39,21 @@ apt autoremove -y
 
 # Add MySQL 8 repository
 apt install -y apt-transport-https ca-certificates gnupg
+# Import MySQL GPG key (modern method using keyring)
+wget -qO - https://repo.mysql.com/RPM-GPG-KEY-mysql-2022 | gpg --dearmor | tee /usr/share/keyrings/mysql-keyring.gpg > /dev/null
+# Fallback methods if the above fails
+if [ ! -s /usr/share/keyrings/mysql-keyring.gpg ]; then
+  # Try direct download from keyserver
+  gpg --no-default-keyring --keyring /usr/share/keyrings/mysql-keyring.gpg --keyserver keyserver.ubuntu.com --recv-keys B7B3B788A8D3785C
+fi
 wget -c https://dev.mysql.com/get/mysql-apt-config_0.8.24-1_all.deb
 DEBIAN_FRONTEND=noninteractive dpkg -i mysql-apt-config_0.8.24-1_all.deb
 
 # Install MySQL 8
+# Update sources.list.d to use the keyring
+if [ -f /etc/apt/sources.list.d/mysql.list ]; then
+  sed -i 's|deb http://repo.mysql.com|deb [signed-by=/usr/share/keyrings/mysql-keyring.gpg] http://repo.mysql.com|g' /etc/apt/sources.list.d/mysql.list
+fi
 apt update
 apt install -y mysql-server
 
