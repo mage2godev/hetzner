@@ -17,6 +17,8 @@ DOMAIN_NAME="irelax.com.ua"
 # SWAP (для VPS < 4GB)
 # -------------------------------
 echo "Creating swap file..."
+swapoff /swapfile
+rm /swapfile
 fallocate -l 2G /swapfile
 chmod 600 /swapfile
 mkswap /swapfile
@@ -59,6 +61,11 @@ mv composer.phar /usr/local/bin/composer
 echo "Installing OpenSearch..."
 wget -qO - https://artifacts.opensearch.org/publickeys/opensearch.pgp | gpg --dearmor | tee /usr/share/keyrings/opensearch.gpg > /dev/null
 echo "deb [signed-by=/usr/share/keyrings/opensearch.gpg] https://artifacts.opensearch.org/releases/bundle/opensearch/2.x/apt stable main" | tee /etc/apt/sources.list.d/opensearch-2.x.list
+
+# Disable demo configuration installation to prevent post-installation script errors
+export OPENSEARCH_INITIAL_ADMIN_PASSWORD=admin
+export DISABLE_INSTALL_DEMO_CONFIG=true
+export DISABLE_SECURITY_PLUGIN=true
 
 apt update && apt install -y opensearch
 
