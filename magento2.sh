@@ -17,7 +17,6 @@ DOMAIN_NAME="irelax.com.ua"
 # SWAP (для VPS < 4GB)
 # -------------------------------
 echo "Checking swap..."
-
 if swapon --show | grep -q '/swapfile'; then
   echo "Swap already exists, skipping creation."
 else
@@ -36,35 +35,35 @@ echo "Updating system..."
 apt update && apt upgrade -y
 
 # -------------------------------
-# INSTALL PACKAGES
+# BASE PACKAGES
 # -------------------------------
-echo "Installing Apache, PHP, Redis, Varnish..."
-
+echo "Installing base packages..."
 apt install -y apt-transport-https ca-certificates gnupg lsb-release wget curl unzip git
 
 # -------------------------------
-# INSTALL MySQL 8 (FIXED)
+# FIXED MySQL 8 INSTALL
 # -------------------------------
 echo "Installing MySQL 8..."
-
 # Remove old conflicting sources if they exist
 rm -f /etc/apt/sources.list.d/mysql.list
 sed -i '/repo.mysql.com/d' /etc/apt/sources.list
-rm -f /usr/share/keyrings/mysql.gpg
 
-# Add official GPG key & repo
-curl -fsSL https://repo.mysql.com/RPM-GPG-KEY-mysql-2022 | gpg --dearmor -o /usr/share/keyrings/mysql.gpg
+# Add official GPG key and repo
+wget -qO - https://repo.mysql.com/RPM-GPG-KEY-mysql-2022 | gpg --dearmor -o /usr/share/keyrings/mysql.gpg
+
+# Import the specific MySQL public key that's missing
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B7B3B788A8D3785C
 
 echo "deb [arch=amd64 signed-by=/usr/share/keyrings/mysql.gpg] http://repo.mysql.com/apt/ubuntu/ $(lsb_release -sc) mysql-8.0" | tee /etc/apt/sources.list.d/mysql.list
 
 apt update
 DEBIAN_FRONTEND=noninteractive apt install -y mysql-server
 
-# Ensure MySQL is started and enabled
+# Start and enable MySQL
 systemctl start mysql
 systemctl enable mysql
 
-# Configure MySQL 8 for Magento
+# Configure MySQL for Magento
 cat > /etc/mysql/conf.d/magento.cnf <<EOF
 [mysqld]
 innodb_buffer_pool_size = 1G
@@ -75,12 +74,12 @@ innodb_log_file_size = 256M
 default-authentication-plugin = mysql_native_password
 EOF
 
-# Restart MySQL to apply configuration
 systemctl restart mysql
 
 # -------------------------------
-# INSTALL PHP + Web Stack
+# INSTALL PHP, Apache, Redis, Varnish
 # -------------------------------
+echo "Installing Apache, PHP, Redis, Varnish..."
 apt install -y apache2 php8.2 php8.2-fpm php8.2-cli php8.2-mysql \
   php8.2-xml php8.2-curl php8.2-gd php8.2-bcmath php8.2-intl \
   php8.2-soap php8.2-zip php8.2-mbstring php8.2-common php8.2-opcache \
@@ -97,19 +96,17 @@ mv composer.phar /usr/local/bin/composer
 # INSTALL Elasticsearch 7.x
 # -------------------------------
 echo "Installing Elasticsearch 7.x..."
-
 wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor -o /usr/share/keyrings/elasticsearch-keyring.gpg
 
 echo "deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.gpg] https://artifacts.elastic.co/packages/7.x/apt stable main" | tee /etc/apt/sources.list.d/elastic-7.x.list
 
 apt update && apt install -y elasticsearch
 
-systemctl daemon-reload
 systemctl enable elasticsearch
 systemctl start elasticsearch
 
 # -------------------------------
-# CONFIGURE MYSQL
+# CONFIGURE MYSQL DATABASE
 # -------------------------------
 echo "Configuring MySQL..."
 mysql -u root <<MYSQL_SCRIPT
@@ -134,9 +131,9 @@ sed -i 's/;date.timezone =.*/date.timezone = UTC/' /etc/php/8.2/fpm/php.ini
 systemctl restart php8.2-fpm
 
 # -------------------------------
-# DOWNLOAD MAGENTO
+# PREPARE MAGENTO DIR
 # -------------------------------
-echo "Creating Magento directory..."
+echo "Preparing Magento directory..."
 mkdir -p ${MAGENTO_BASE_DIR}
 cd ${MAGENTO_BASE_DIR}
 
@@ -144,6 +141,7 @@ cd ${MAGENTO_BASE_DIR}
 # SET PERMISSIONS
 # -------------------------------
 echo "Setting permissions..."
+mkdir -p var generated vendor pub/static pub/media app/etc
 find var generated vendor pub/static pub/media app/etc -type f -exec chmod g+w {} +
 find var generated vendor pub/static pub/media app/etc -type d -exec chmod g+ws {} +
 chown -R www-data:www-data ${MAGENTO_BASE_DIR}
@@ -188,10 +186,7 @@ backend default {
 include "/etc/varnish/magento.vcl";
 EOL
 
-# Copy default VCL for Magento:
 cat > /etc/varnish/magento.vcl <<EOL
-# Basic Magento Varnish config
-# You can generate optimized VCL in Magento Admin
 vcl 4.0;
 
 backend default {
@@ -200,7 +195,6 @@ backend default {
 }
 EOL
 
-# Update systemd varnish port
 sed -i 's/-a :6081/-a :80/' /etc/systemd/system/multi-user.target.wants/varnish.service || true
 
 a2dissite 000-default.conf
@@ -210,5 +204,8 @@ systemctl daemon-reload
 systemctl restart apache2
 systemctl restart varnish
 
+# -------------------------------
+# DONE
+# -------------------------------
 echo "Magento ${MAGENTO_VERSION} with Apache + Redis + Varnish + Elasticsearch7 installed!"
 echo "Open your site: http://${DOMAIN_NAME}"
