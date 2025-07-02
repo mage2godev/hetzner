@@ -6,8 +6,8 @@ MAGENTO_VERSION="2.4.6-p9"
 MAGENTO_DIR="/var/www/$DOMAIN"
 DB_NAME="magento"
 DB_USER="magento"
-DB_PASS="wMagent0Pass1r23!"
-MYSQL_ROOT_PASS="rootwMagent0Pass1r23!"
+DB_PASS="magento_pass"
+MYSQL_ROOT_PASS="root_pass"
 ES_VERSION="7.17.22"
 
 # ------------------ Оновлення системи ------------------
@@ -77,9 +77,18 @@ bin/magento setup:install \
 cat > /etc/nginx/sites-available/$DOMAIN <<EOF
 server {
     listen 80;
-    server_name $DOMAIN www.$DOMAIN;
-    set \$MAGE_ROOT $MAGENTO_DIR;
-    include /var/www/$DOMAIN/nginx.conf.sample;
+    server_name irelax.com.ua www.irelax.com.ua;
+    set $MAGE_ROOT /var/www/irelax.com.ua;
+    set $MAGE_MODE production;
+
+    root $MAGE_ROOT/pub;
+
+    index index.php;
+    
+    access_log /var/log/nginx/irelax_access.log;
+    error_log /var/log/nginx/irelax_error.log;
+
+    include $MAGE_ROOT/nginx.conf.sample;
 }
 EOF
 
