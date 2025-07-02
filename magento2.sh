@@ -6,9 +6,9 @@ set -e
 # CONFIGURATION
 # -------------------------------
 MYSQL_ROOT_PASS="RootPass123!"
-MYSQL_MAGENTO_DB="magento"
-MYSQL_MAGENTO_USER="magento_user"
-MYSQL_MAGENTO_PASS="Magent0UserPass!"
+MYSQL_MAGENTO_DB="magento_drop"
+MYSQL_MAGENTO_USER="magento_drop"
+MYSQL_MAGENTO_PASS="Magent0DropPass!"
 MAGENTO_VERSION="2.4.6-p9"
 MAGENTO_BASE_DIR="/var/www/magento2"
 DOMAIN_NAME="irelax.com.ua"
@@ -17,25 +17,22 @@ DOMAIN_NAME="irelax.com.ua"
 # SWAP (для VPS < 4GB)
 # -------------------------------
 echo "Creating swap file..."
-#fallocate -l 2G /swapfile
-#chmod 600 /swapfile
-#mkswap /swapfile
-#swapon /swapfile
-#echo '/swapfile none swap sw 0 0' >> /etc/fstab
+fallocate -l 2G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+echo '/swapfile none swap sw 0 0' >> /etc/fstab
 
 # -------------------------------
 # UPDATE SYSTEM
 # -------------------------------
 echo "Updating system..."
-#apt update && apt upgrade -y
+apt update && apt upgrade -y
 
 # -------------------------------
 # INSTALL PACKAGES
 # -------------------------------
 echo "Installing Apache, PHP, Redis, Varnish..."
-# Remove any existing MariaDB installation
-apt remove -y mariadb-server mariadb-client
-apt autoremove -y
 
 # Add MySQL 8 repository
 apt install -y apt-transport-https ca-certificates gnupg
@@ -83,23 +80,23 @@ apt install -y apache2 php8.2 php8.2-fpm php8.2-cli php8.2-mysql \
 # INSTALL COMPOSER
 # -------------------------------
 echo "Installing Composer..."
-#curl -sS https://getcomposer.org/installer | php
-#mv composer.phar /usr/local/bin/composer
+curl -sS https://getcomposer.org/installer | php
+mv composer.phar /usr/local/bin/composer
 
 # -------------------------------
 # INSTALL Elasticsearch 7.x
 # -------------------------------
-#echo "Installing Elasticsearch 7.x..."
-#
-#wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor | tee /usr/share/keyrings/elasticsearch-keyring.gpg >/dev/null
-#
-#echo "deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.gpg] https://artifacts.elastic.co/packages/7.x/apt stable main" | tee /etc/apt/sources.list.d/elastic-7.x.list
-#
-#apt update && apt install -y elasticsearch
-#
-#systemctl daemon-reload
-#systemctl enable elasticsearch
-#systemctl start elasticsearch
+echo "Installing Elasticsearch 7.x..."
+
+wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | gpg --dearmor | tee /usr/share/keyrings/elasticsearch-keyring.gpg >/dev/null
+
+echo "deb [signed-by=/usr/share/keyrings/elasticsearch-keyring.gpg] https://artifacts.elastic.co/packages/7.x/apt stable main" | tee /etc/apt/sources.list.d/elastic-7.x.list
+
+apt update && apt install -y elasticsearch
+
+systemctl daemon-reload
+systemctl enable elasticsearch
+systemctl start elasticsearch
 
 # -------------------------------
 # CONFIGURE MYSQL
@@ -119,19 +116,19 @@ MYSQL_SCRIPT
 # CONFIGURE PHP
 # -------------------------------
 echo "Configuring PHP..."
-#sed -i 's/memory_limit = .*/memory_limit = 2G/' /etc/php/8.2/fpm/php.ini
-#sed -i 's/upload_max_filesize = .*/upload_max_filesize = 64M/' /etc/php/8.2/fpm/php.ini
-#sed -i 's/post_max_size = .*/post_max_size = 64M/' /etc/php/8.2/fpm/php.ini
-#sed -i 's/;date.timezone =.*/date.timezone = UTC/' /etc/php/8.2/fpm/php.ini
+sed -i 's/memory_limit = .*/memory_limit = 4G/' /etc/php/8.2/fpm/php.ini
+sed -i 's/upload_max_filesize = .*/upload_max_filesize = 64M/' /etc/php/8.2/fpm/php.ini
+sed -i 's/post_max_size = .*/post_max_size = 64M/' /etc/php/8.2/fpm/php.ini
+sed -i 's/;date.timezone =.*/date.timezone = UTC/' /etc/php/8.2/fpm/php.ini
 
 systemctl restart php8.2-fpm
 
 # -------------------------------
 # DOWNLOAD MAGENTO
 # -------------------------------
-#echo "Downloading Magento ${MAGENTO_VERSION}..."
-#mkdir -p ${MAGENTO_BASE_DIR}
-#cd ${MAGENTO_BASE_DIR}
+echo "Downloading Magento ${MAGENTO_VERSION}..."
+mkdir -p ${MAGENTO_BASE_DIR}
+cd ${MAGENTO_BASE_DIR}
 
 
 # -------------------------------
@@ -207,33 +204,33 @@ systemctl restart varnish
 # -------------------------------
 # INSTALL MAGENTO
 # -------------------------------
-echo "Installing Magento..."
-bin/magento setup:install \
-  --base-url=http://${DOMAIN_NAME}/ \
-  --db-host=localhost \
-  --db-name=${MYSQL_MAGENTO_DB} \
-  --db-user=${MYSQL_MAGENTO_USER} \
-  --db-password=${MYSQL_MAGENTO_PASS} \
-  --admin-firstname=Admin \
-  --admin-lastname=User \
-  --admin-email=admin@${DOMAIN_NAME} \
-  --admin-user=admin \
-  --admin-password=Admin123! \
-  --language=en_US \
-  --currency=USD \
-  --timezone=UTC \
-  --use-rewrites=1 \
-  --search-engine=elasticsearch7 \
-  --elasticsearch-host=localhost \
-  --elasticsearch-port=9200 \
-  --session-save=redis \
-  --cache-backend=redis \
-  --cache-backend-redis-server=127.0.0.1 \
-  --cache-backend-redis-port=6379
-
-bin/magento deploy:mode:set production
-bin/magento setup:upgrade
-bin/magento cache:flush
+#echo "Installing Magento..."
+#bin/magento setup:install \
+#  --base-url=http://${DOMAIN_NAME}/ \
+#  --db-host=localhost \
+#  --db-name=${MYSQL_MAGENTO_DB} \
+#  --db-user=${MYSQL_MAGENTO_USER} \
+#  --db-password=${MYSQL_MAGENTO_PASS} \
+#  --admin-firstname=Admin \
+#  --admin-lastname=User \
+#  --admin-email=admin@${DOMAIN_NAME} \
+#  --admin-user=admin \
+#  --admin-password=Admin123! \
+#  --language=en_US \
+#  --currency=USD \
+#  --timezone=UTC \
+#  --use-rewrites=1 \
+#  --search-engine=elasticsearch7 \
+#  --elasticsearch-host=localhost \
+#  --elasticsearch-port=9200 \
+#  --session-save=redis \
+#  --cache-backend=redis \
+#  --cache-backend-redis-server=127.0.0.1 \
+#  --cache-backend-redis-port=6379
+#
+#bin/magento deploy:mode:set production
+#bin/magento setup:upgrade
+#bin/magento cache:flush
 #bin/magento setup:config:set --http-cache-hosts=127.0.0.1:80
 
 echo "Magento ${MAGENTO_VERSION} with Apache + Redis + Varnish + Elasticsearch7 installed!"
