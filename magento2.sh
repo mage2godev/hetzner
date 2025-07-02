@@ -51,8 +51,15 @@ sed -i '/repo.mysql.com/d' /etc/apt/sources.list
 # Add official GPG key and repo
 wget -qO - https://repo.mysql.com/RPM-GPG-KEY-mysql-2022 | gpg --dearmor -o /usr/share/keyrings/mysql-2022.gpg
 
-# Import the specific MySQL public key that's missing (using modern approach)
-wget -qO - https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xB7B3B788A8D3785C | gpg --dearmor -o /usr/share/keyrings/mysql-B7B3B788A8D3785C.gpg
+# Import the specific MySQL public key that's missing (using multiple methods for reliability)
+# Method 1: Try direct download from MySQL
+wget -qO - https://repo.mysql.com/RPM-GPG-KEY-mysql-B7B3B788A8D3785C | gpg --dearmor -o /usr/share/keyrings/mysql-B7B3B788A8D3785C.gpg || true
+
+# Method 2: If Method 1 fails, try using apt-key as fallback (deprecated but functional)
+if [ ! -s /usr/share/keyrings/mysql-B7B3B788A8D3785C.gpg ]; then
+  apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B7B3B788A8D3785C
+  apt-key export B7B3B788A8D3785C | gpg --dearmor -o /usr/share/keyrings/mysql-B7B3B788A8D3785C.gpg
+fi
 
 echo "deb [arch=amd64 signed-by=/usr/share/keyrings/mysql-2022.gpg,signed-by=/usr/share/keyrings/mysql-B7B3B788A8D3785C.gpg] http://repo.mysql.com/apt/ubuntu/ $(lsb_release -sc) mysql-8.0" | tee /etc/apt/sources.list.d/mysql.list
 
