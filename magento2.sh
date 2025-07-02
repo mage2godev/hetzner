@@ -32,34 +32,34 @@ fi
 # UPDATE SYSTEM
 # -------------------------------
 echo "Updating system..."
-#apt update && apt upgrade -y
+apt update && apt upgrade -y
 
 # -------------------------------
 # BASE PACKAGES
 # -------------------------------
 echo "Installing base packages..."
-#apt install -y apt-transport-https ca-certificates gnupg lsb-release wget curl unzip git
+apt install -y apt-transport-https ca-certificates gnupg lsb-release wget curl unzip git
 
 # -------------------------------
 # FIXED MySQL 8 INSTALL
 # -------------------------------
 echo "Installing MySQL 8..."
 # Remove old conflicting sources if they exist
-#rm -f /etc/apt/sources.list.d/mysql.list
-#sed -i '/repo.mysql.com/d' /etc/apt/sources.list
+rm -f /etc/apt/sources.list.d/mysql.list
+sed -i '/repo.mysql.com/d' /etc/apt/sources.list
 
 # Add MySQL GPG key using apt-key (deprecated, але стабільно працює)
-#curl -fsSL https://repo.mysql.com/RPM-GPG-KEY-mysql-2022 | apt-key add -
+curl -fsSL https://repo.mysql.com/RPM-GPG-KEY-mysql-2022 | apt-key add -
 
 # Add MySQL repository WITHOUT signed-by (щоб не було конфлікту)
-#echo "deb http://repo.mysql.com/apt/ubuntu/ $(lsb_release -sc) mysql-8.0" | tee /etc/apt/sources.list.d/mysql.list
+echo "deb http://repo.mysql.com/apt/ubuntu/ $(lsb_release -sc) mysql-8.0" | tee /etc/apt/sources.list.d/mysql.list
 
-#apt update
-#DEBIAN_FRONTEND=noninteractive apt install -y mysql-server
+apt update
+DEBIAN_FRONTEND=noninteractive apt install -y mysql-server
 
 # Start and enable MySQL
-#systemctl start mysql
-#systemctl enable mysql
+systemctl start mysql
+systemctl enable mysql
 
 # Configure MySQL for Magento
 cat > /etc/mysql/conf.d/magento.cnf <<EOF
