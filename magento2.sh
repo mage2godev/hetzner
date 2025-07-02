@@ -6,11 +6,11 @@ set -e
 # CONFIGURATION
 # -------------------------------
 MYSQL_ROOT_PASS="RootPass123!"
-MYSQL_MAGENTO_DB="magento_drop"
-MYSQL_MAGENTO_USER="magento_drop"
-MYSQL_MAGENTO_PASS="Magent0DropPass!"
+MYSQL_MAGENTO_DB="magento_irelax"
+MYSQL_MAGENTO_USER="magento_irelax"
+MYSQL_MAGENTO_PASS="Magent0IrelaxPass!"
 MAGENTO_VERSION="2.4.6-p9"
-MAGENTO_BASE_DIR="/var/www/magento2"
+MAGENTO_BASE_DIR="/var/www/html/drop"
 DOMAIN_NAME="irelax.com.ua"
 
 # -------------------------------
@@ -87,7 +87,7 @@ apt install -y apache2 php8.2 php8.2-fpm php8.2-cli php8.2-mysql \
 # INSTALL COMPOSER
 # -------------------------------
 echo "Installing Composer..."
-curl -sS https://getcomposer.org/installer | php
+curl -sS https://getcomposer.org/installer | php -- --version=2.2.21
 mv composer.phar /usr/local/bin/composer
 
 # -------------------------------
@@ -136,10 +136,38 @@ mkdir -p ${MAGENTO_BASE_DIR}
 cd ${MAGENTO_BASE_DIR}
 
 # -------------------------------
+# SETUP AUTH.JSON
+# -------------------------------
+echo "Setting up auth.json..."
+cat > ${MAGENTO_BASE_DIR}/auth.json <<EOF
+{
+    "http-basic": {
+        "repo.magento.com": {
+            "username": "c5c73502f26b15c3d929a481280c862f",
+            "password": "06f86d7b8cc8e508fd2878af817b9ba5"
+        },
+        "composer.amasty.com": {
+          "username": "2d53536fa63b3a252ccab6be1d3c5ef2",
+          "password": "abe8261618eca67a4dae2291ea1d98c2"
+        }
+    },
+    "github-oauth": {
+        "github.com": "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"
+    }
+}
+EOF
+
+# -------------------------------
+# INSTALL MAGENTO
+# -------------------------------
+echo "Installing Magento ${MAGENTO_VERSION}..."
+cd ${MAGENTO_BASE_DIR}
+composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition=${MAGENTO_VERSION} .
+
+# -------------------------------
 # SET PERMISSIONS
 # -------------------------------
 echo "Setting permissions..."
-mkdir -p var generated vendor pub/static pub/media app/etc
 find var generated vendor pub/static pub/media app/etc -type f -exec chmod g+w {} +
 find var generated vendor pub/static pub/media app/etc -type d -exec chmod g+ws {} +
 chown -R www-data:www-data ${MAGENTO_BASE_DIR}
@@ -154,9 +182,9 @@ a2enconf php8.2-fpm
 cat > /etc/apache2/sites-available/magento.conf <<EOL
 <VirtualHost *:8080>
     ServerName ${DOMAIN_NAME}
-    DocumentRoot ${MAGENTO_BASE_DIR}
+    DocumentRoot ${MAGENTO_BASE_DIR}/pub
 
-    <Directory ${MAGENTO_BASE_DIR}>
+    <Directory ${MAGENTO_BASE_DIR}/pub>
         Options Indexes FollowSymLinks
         AllowOverride All
         Require all granted
@@ -203,7 +231,53 @@ systemctl restart apache2
 systemctl restart varnish
 
 # -------------------------------
+# INSTALL MAGENTO
+# -------------------------------
+echo "Running Magento setup..."
+cd ${MAGENTO_BASE_DIR}
+php bin/magento setup:install \
+  --base-url=http://${DOMAIN_NAME} \
+  --db-host=localhost \
+  --db-name=${MYSQL_MAGENTO_DB} \
+  --db-user=${MYSQL_MAGENTO_USER} \
+  --db-password=${MYSQL_MAGENTO_PASS} \
+  --admin-firstname=Admin \
+  --admin-lastname=User \
+  --admin-email=admin@${DOMAIN_NAME} \
+  --admin-user=admin \
+  --admin-password=admin123 \
+  --language=uk_UA \
+  --currency=UAH \
+  --timezone=Europe/Kiev \
+  --use-rewrites=1 \
+  --search-engine=elasticsearch7 \
+  --elasticsearch-host=localhost \
+  --elasticsearch-port=9200
+
+# -------------------------------
+# DEPLOY STATIC CONTENT
+# -------------------------------
+echo "Deploying static content..."
+php -dmemory_limit=1G bin/magento setup:static-content:deploy en_US --area adminhtml -f --jobs 4
+php -dmemory_limit=1G bin/magento setup:static-content:deploy uk_UA -f --jobs 2
+
+# -------------------------------
+# FINAL CONFIGURATION
+# -------------------------------
+echo "Applying final configuration..."
+php bin/magento config:set --scope=default --scope-code=0 web/secure/use_in_frontend 1
+php bin/magento config:set --scope=default --scope-code=0 web/secure/use_in_adminhtml 1
+php bin/magento config:set --scope=default --scope-code=0 web/unsecure/base_url http://${DOMAIN_NAME}/
+php bin/magento config:set --scope=default --scope-code=0 web/secure/base_url https://${DOMAIN_NAME}/
+
+php bin/magento cache:flush
+php bin/magento indexer:reindex
+
+# -------------------------------
 # DONE
 # -------------------------------
-echo "Magento ${MAGENTO_VERSION} with Apache + Redis + Varnish + Elasticsearch7 installed!"
-echo "Open your site: http://${DOMAIN_NAME}"
+echo "Magento ${MAGENTO_VERSION} installation completed!"
+echo "Frontend: http://${DOMAIN_NAME}"
+echo "Admin panel: http://${DOMAIN_NAME}/admin"
+echo "Admin username: admin"
+echo "Admin password: admin123"
