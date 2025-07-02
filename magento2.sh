@@ -72,7 +72,10 @@ if [ ! -s /usr/share/keyrings/mysql-B7B3B788A8D3785C.gpg ]; then
   touch /usr/share/keyrings/mysql-B7B3B788A8D3785C.gpg
 fi
 
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/mysql-2022.gpg,signed-by=/usr/share/keyrings/mysql-B7B3B788A8D3785C.gpg] http://repo.mysql.com/apt/ubuntu/ $(lsb_release -sc) mysql-8.0" | tee /etc/apt/sources.list.d/mysql.list
+# Combine both keys into a single keyring file
+cat /usr/share/keyrings/mysql-2022.gpg /usr/share/keyrings/mysql-B7B3B788A8D3785C.gpg > /usr/share/keyrings/mysql-combined.gpg
+
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/mysql-combined.gpg] http://repo.mysql.com/apt/ubuntu/ $(lsb_release -sc) mysql-8.0" | tee /etc/apt/sources.list.d/mysql.list
 
 apt update
 DEBIAN_FRONTEND=noninteractive apt install -y mysql-server
