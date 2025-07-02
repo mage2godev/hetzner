@@ -6,8 +6,8 @@ MAGENTO_VERSION="2.4.6-p9"
 MAGENTO_DIR="/var/www/$DOMAIN"
 DB_NAME="magento"
 DB_USER="magento"
-DB_PASS="magento_pass"
-MYSQL_ROOT_PASS="root_pass"
+DB_PASS="wMagent0Pass1r23!"
+MYSQL_ROOT_PASS="rootwMagent0Pass1r23!"
 ES_VERSION="7.17.22"
 
 # ------------------ Оновлення системи ------------------
