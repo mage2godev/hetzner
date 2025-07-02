@@ -18,16 +18,16 @@ DOMAIN_NAME="irelax.com.ua"
 # -------------------------------
 echo "Checking swap..."
 
-if swapon --show | grep -q '/swapfile'; then
-  echo "Swap already exists, skipping creation."
-else
-  echo "Creating swap file..."
-  fallocate -l 2G /swapfile
-  chmod 600 /swapfile
-  mkswap /swapfile
-  swapon /swapfile
-  echo '/swapfile none swap sw 0 0' >> /etc/fstab
-fi
+#if swapon --show | grep -q '/swapfile'; then
+#  echo "Swap already exists, skipping creation."
+#else
+#  echo "Creating swap file..."
+#  fallocate -l 2G /swapfile
+#  chmod 600 /swapfile
+#  mkswap /swapfile
+#  swapon /swapfile
+#  echo '/swapfile none swap sw 0 0' >> /etc/fstab
+#fi
 
 # -------------------------------
 # UPDATE SYSTEM
