@@ -48,34 +48,12 @@ echo "Installing MySQL 8..."
 rm -f /etc/apt/sources.list.d/mysql.list
 sed -i '/repo.mysql.com/d' /etc/apt/sources.list
 
-# Add official GPG key and repo (with automatic yes to overwrite)
-wget -qO - https://repo.mysql.com/RPM-GPG-KEY-mysql-2022 | gpg --yes --dearmor -o /usr/share/keyrings/mysql-2022.gpg
+# Add MySQL GPG key using a simpler approach
+mkdir -p /etc/apt/keyrings
+wget -qO - https://repo.mysql.com/RPM-GPG-KEY-mysql-2022 | gpg --yes --dearmor -o /etc/apt/keyrings/mysql-archive-keyring.gpg
 
-# Import the specific MySQL public key that's missing (using multiple methods for reliability)
-# Method 1: Try direct download from MySQL's keyserver
-wget -qO - "https://repo.mysql.com/RPM-GPG-KEY-mysql-B7B3B788A8D3785C" | gpg --yes --dearmor -o /usr/share/keyrings/mysql-B7B3B788A8D3785C.gpg || true
-
-# Method 2: Try Ubuntu's keyserver if Method 1 fails
-if [ ! -s /usr/share/keyrings/mysql-B7B3B788A8D3785C.gpg ]; then
-  wget -qO - "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xB7B3B788A8D3785C" | gpg --yes --dearmor -o /usr/share/keyrings/mysql-B7B3B788A8D3785C.gpg || true
-fi
-
-# Method 3: If both previous methods fail, use apt-key as fallback (deprecated but functional)
-if [ ! -s /usr/share/keyrings/mysql-B7B3B788A8D3785C.gpg ]; then
-  apt-key adv --keyserver keyserver.ubuntu.com --recv-keys B7B3B788A8D3785C
-  apt-key export B7B3B788A8D3785C | gpg --yes --dearmor -o /usr/share/keyrings/mysql-B7B3B788A8D3785C.gpg
-fi
-
-# Final fallback: If all methods fail, create a dummy key file to prevent further prompts
-if [ ! -s /usr/share/keyrings/mysql-B7B3B788A8D3785C.gpg ]; then
-  echo "Creating empty keyring file as fallback..."
-  touch /usr/share/keyrings/mysql-B7B3B788A8D3785C.gpg
-fi
-
-# Combine both keys into a single keyring file
-cat /usr/share/keyrings/mysql-2022.gpg /usr/share/keyrings/mysql-B7B3B788A8D3785C.gpg > /usr/share/keyrings/mysql-combined.gpg
-
-echo "deb [arch=amd64 signed-by=/usr/share/keyrings/mysql-combined.gpg] http://repo.mysql.com/apt/ubuntu/ $(lsb_release -sc) mysql-8.0" | tee /etc/apt/sources.list.d/mysql.list
+# Add MySQL repository with the correct signed-by format
+echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/mysql-archive-keyring.gpg] http://repo.mysql.com/apt/ubuntu/ $(lsb_release -sc) mysql-8.0" | tee /etc/apt/sources.list.d/mysql.list
 
 apt update
 DEBIAN_FRONTEND=noninteractive apt install -y mysql-server
