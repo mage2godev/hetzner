@@ -32,7 +32,7 @@ fi
 # UPDATE SYSTEM
 # -------------------------------
 echo "Updating system..."
-#apt update && apt upgrade -y
+apt update && apt upgrade -y
 
 # -------------------------------
 # BASE PACKAGES
@@ -49,11 +49,11 @@ rm -f /etc/apt/sources.list.d/mysql.list
 sed -i '/repo.mysql.com/d' /etc/apt/sources.list
 
 # Add MySQL GPG key using a simpler approach
-mkdir -p /etc/apt/keyrings
-wget -qO - https://repo.mysql.com/RPM-GPG-KEY-mysql-2022 | gpg --yes --dearmor -o /etc/apt/keyrings/mysql-archive-keyring.gpg
+mkdir -p /usr/share/keyrings
+wget -qO - https://repo.mysql.com/RPM-GPG-KEY-mysql-2022 | gpg --yes --dearmor -o /usr/share/keyrings/mysql-archive-keyring.gpg
 
 # Add MySQL repository with the correct signed-by format
-echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/mysql-archive-keyring.gpg] http://repo.mysql.com/apt/ubuntu/ $(lsb_release -sc) mysql-8.0" | tee /etc/apt/sources.list.d/mysql.list
+echo "deb [signed-by=/usr/share/keyrings/mysql-archive-keyring.gpg] http://repo.mysql.com/apt/ubuntu/ $(lsb_release -sc) mysql-8.0" | tee /etc/apt/sources.list.d/mysql.list
 
 apt update
 DEBIAN_FRONTEND=noninteractive apt install -y mysql-server
