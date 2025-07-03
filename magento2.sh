@@ -15,20 +15,20 @@ DB_NAME="magento"
 DB_USER="magento"
 DB_PASS="234StrongPу45gassword123!"
 
-echo "=== [1] System Update ==="
-apt update && apt upgrade -y
-
-echo "=== [2] Install Basics ==="
-apt install -y software-properties-common curl wget git unzip zip
-
-echo "=== [3] Install PHP 8.1 ==="
-add-apt-repository ppa:ondrej/php -y
-apt update
-apt install -y php8.1 php8.1-{cli,fpm,common,mbstring,xml,gd,curl,mysql,bcmath,intl,zip,soap}
+#echo "=== [1] System Update ==="
+#apt update && apt upgrade -y
+#
+#echo "=== [2] Install Basics ==="
+#apt install -y software-properties-common curl wget git unzip zip
+#
+#echo "=== [3] Install PHP 8.1 ==="
+#add-apt-repository ppa:ondrej/php -y
+#apt update
+#apt install -y php8.1 php8.1-{cli,fpm,common,mbstring,xml,gd,curl,mysql,bcmath,intl,zip,soap}
 
 echo "=== [4] Install Composer 2.2 ==="
 php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-php composer-setup.php --install-dir=/usr/local/bin --filename=composer --version=2.2
+php composer-setup.php --install-dir=/usr/local/bin --filename=composer --version=2.2.21
 rm composer-setup.php
 
 echo "=== [5] Install MariaDB 10.5 ==="
