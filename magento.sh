@@ -27,9 +27,9 @@ DB_PASS="234StrongPу45gassword123!"
 #apt install -y php8.1 php8.1-{cli,fpm,common,mbstring,xml,gd,curl,mysql,bcmath,intl,zip,soap}
 
 echo "=== [4] Install Composer 2.2 ==="
-php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-php composer-setup.php --install-dir=/usr/local/bin --filename=composer --version=2.2.21
-rm composer-setup.php
+#php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+#php composer-setup.php --install-dir=/usr/local/bin --filename=composer --version=2.2.21
+#rm composer-setup.php
 
 echo "=== [5] Install MariaDB 10.5 ==="
 apt install -y mariadb-server mariadb-client
